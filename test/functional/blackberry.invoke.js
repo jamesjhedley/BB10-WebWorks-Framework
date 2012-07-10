@@ -13,8 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+var onSuccess,
+    onError,
+    onSuccessFlag,
+    onErrorFlag,
+    delay = 750;
 
 describe("blackberry.invoke", function () {
+    beforeEach(function () {
+        spyOn(window.webworks.event, 'isOn').andReturn(false);
+        onSuccessFlag = false;
+        onErrorFlag = false;
+        onSuccess = jasmine.createSpy("success callback").andCallFake(
+            function () {
+                onSuccessFlag = true;
+            });
+        onError = jasmine.createSpy("error callback").andCallFake(
+            function () {
+                onErrorFlag = true;
+            });
+    });
+
+    afterEach(function () {
+        onSuccess = null;
+        onError = null;
+        onSuccessFlag = false;
+        onErrorFlag = false;
+    });
+
     it('blackberry.invoke should exist', function () {
         expect(blackberry.invoke).toBeDefined();
     });
@@ -122,13 +148,202 @@ describe("blackberry.invoke", function () {
 
         waitsFor(function () {
             return onSuccessFlag || onErrorFlag;
-        }, "The callback flag should be set to true", 750);
+        }, "The callback flag should be set to true", delay);
 
         runs(function () {
             if (confirm) {
                 expect(onSuccessFlag).toBeTruthy();
                 expect(onErrorFlag).toBeFalsy();
             }
+        });
+    });
+
+    describe("Cards", function () {
+        var request = {
+                target: "net.rim.webworks.invoke.invoke.card.type",
+            },
+            onCardChildClosed,
+            onCardStartPeek,
+            onCardEndPeek,
+            confirm;
+
+        beforeEach(function () {
+            onCardChildClosed = jasmine.createSpy("onCardChildClosed event");
+            onCardStartPeek = jasmine.createSpy("onCardStartPeek event");
+            onCardEndPeek = jasmine.createSpy("onCardEndPeek event");
+            blackberry.event.addEventListener("onCardChildClosed", onCardChildClosed);
+            blackberry.event.addEventListener("onCardStartPeek", onCardStartPeek);
+            blackberry.event.addEventListener("onCardEndPeek", onCardEndPeek);
+        });
+
+        afterEach(function () {
+            onCardChildClosed = null;
+            onCardStartPeek = null;
+            onCardEndPeek = null;
+            blackberry.event.removeEventListener("onCardChildClosed", onCardStartPeek);
+            blackberry.event.removeEventListener("onCardStartPeek", onCardStartPeek);
+            blackberry.event.removeEventListener("onCardEndPeek", onCardEndPeek);
+            confirm = null;
+        });
+
+        it('invoke should invoke card', function () {
+            try {
+                blackberry.invoke.invoke(request, onSuccess, onError);
+            } catch (e) {
+                console.log(e);
+            }
+
+            waitsFor(function () {
+                return onSuccessFlag || onErrorFlag;
+            }, "The callback flag should be set to true", delay);
+
+            runs(function () {
+                waits(delay);
+
+                runs(function () {
+                    blackberry.invoke.closeChildCard();
+                    confirm = window.confirm("Did it invoke card and then closed?");
+                    expect(confirm).toEqual(true);
+                    expect(onSuccess).toHaveBeenCalled();
+                    expect(onError).not.toHaveBeenCalled();
+                });
+            });
+        });
+
+        it('invoke should not invoke card whith invalid target name', function () {
+            request.target = "net.rim.webworks.invoke.invoke.invalid.card.target";
+
+            try {
+                blackberry.invoke.invoke(request, onSuccess, onError);
+            } catch (e) {
+                console.log(e);
+            }
+
+            waitsFor(function () {
+                return onSuccessFlag || onErrorFlag;
+            }, "The callback flag should be set to true", delay);
+
+            runs(function () {
+                confirm = window.confirm("Did it NOT invoke card?");
+                expect(confirm).toEqual(true);
+                expect(onSuccess).not.toHaveBeenCalled();
+                expect(onError).toHaveBeenCalled();
+            });
+        });
+
+        it('invoke should be able to call closeChildCard after successfully invoking a card', function () {
+            request.target = "net.rim.webworks.invoke.invoke.card.type";
+
+            alert("This test will invoke card and close it without user interaction.");
+
+            try {
+                blackberry.invoke.invoke(request, onSuccess, onError);
+            } catch (e) {
+                console.log(e);
+            }
+
+            waitsFor(function () {
+                return onSuccessFlag || onErrorFlag;
+            }, "The callback flag should be set to true", delay);
+
+            runs(function () {
+                expect(onSuccessFlag).toEqual(true);
+                if (onSuccessFlag) {
+                    waits(delay);
+
+                    runs(function () {
+                        blackberry.invoke.closeChildCard();
+                        confirm = window.confirm("Did you see card opened and then closed by ITSELF?");
+                        expect(confirm).toEqual(true);
+                    });
+                }
+            });
+        });
+
+        it('invoke should receive onCardChildClosed event when child card was closed', function () {
+            request.target = "net.rim.webworks.invoke.invoke.card.type";
+
+            alert("To get onCardChildClosed event this test will invoke card and close it without user interaction.");
+
+            try {
+                blackberry.invoke.invoke(request, onSuccess, onError);
+            } catch (e) {
+                console.log(e);
+            }
+
+            waitsFor(function () {
+                return onSuccessFlag || onErrorFlag;
+            }, "The callback flag should be set to true", delay);
+
+            runs(function () {
+                expect(onSuccessFlag).toEqual(true);
+                if (onSuccessFlag) {
+                    waits(delay);
+
+                    runs(function () {
+                        blackberry.invoke.closeChildCard();
+                        waits(delay);
+
+                        runs(function () {
+                            expect(onCardChildClosed).toHaveBeenCalled();
+                        });
+                    });
+                }
+            });
+        });
+
+        it('invoke should receive onCardStartPeek event when child card was picked', function () {
+            request.target = "net.rim.webworks.invoke.invoke.card.type";
+
+            alert("To get onCardStartPeek event when card invoked you'll need to press peek then peek it and close if appropriate.");
+
+            try {
+                blackberry.invoke.invoke(request, onSuccess, onError);
+            } catch (e) {
+                console.log(e);
+            }
+
+            waitsFor(function () {
+                return onSuccessFlag || onErrorFlag;
+            }, "The callback flag should be set to true", delay);
+
+            runs(function () {
+                expect(onSuccessFlag).toEqual(true);
+                if (onSuccessFlag) {
+                    waits(delay * 5);
+
+                    runs(function () {
+                        expect(onCardStartPeek).toHaveBeenCalled();
+                    });
+                }
+            });
+        });
+
+        it('invoke should receive onCardEndPeek event when child card was picked', function () {
+            request.target = "net.rim.webworks.invoke.invoke.card.type";
+
+            alert("To get onCardEndPeek event when card invoked you'll need to press peek then peek it and close if appropriate.");
+
+            try {
+                blackberry.invoke.invoke(request, onSuccess, onError);
+            } catch (e) {
+                console.log(e);
+            }
+
+            waitsFor(function () {
+                return onSuccessFlag || onErrorFlag;
+            }, "The callback flag should be set to true", delay);
+
+            runs(function () {
+                expect(onSuccessFlag).toEqual(true);
+                if (onSuccessFlag) {
+                    waits(delay * 5);
+
+                    runs(function () {
+                        expect(onCardEndPeek).toHaveBeenCalled();
+                    });
+                }
+            });
         });
     });
 });
