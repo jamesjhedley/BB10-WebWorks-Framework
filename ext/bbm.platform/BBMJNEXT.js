@@ -92,7 +92,6 @@ JNEXT.BBM = function ()
     };
 
     self.m_id = "";
-    self.eventId = "";
 
     self.init();
 };

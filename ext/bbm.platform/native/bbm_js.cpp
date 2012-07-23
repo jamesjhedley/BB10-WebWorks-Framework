@@ -25,7 +25,7 @@
 
 static bool eventsInitialized = false;
 
-void* BBMEventThread(void *parent)
+void* BBM::BBMEventThread(void *parent)
 {
     // Parent object is casted so we can use it
     BBM *pParent = static_cast<BBM *>(parent);
@@ -36,7 +36,6 @@ void* BBMEventThread(void *parent)
     eventsInitialized = true;
     bbmEvents->WaitForEvents();
 
-    pParent->StopEvents();
     return NULL;
 }
 
@@ -91,7 +90,7 @@ std::string BBM::InvokeMethod(const std::string& command)
 
         m_pBBMController->Register(uuid);
     } else if (strCommand == "getProfile") {
-        Json::StyledWriter writer;
+        Json::FastWriter writer;
         Json::Value obj;
 
         webworks::BBMContact bbmContact;
@@ -143,7 +142,6 @@ void BBM::NotifyEvent(const std::string& event)
     std::string eventString = m_id;
     eventString.append(" ");
     eventString.append(event);
-    fprintf(stderr, "trying to send event to javascript: %s\n", eventString.c_str());
     SendPluginEvent(eventString.c_str(), m_pContext);
 }
 
@@ -166,6 +164,7 @@ void BBM::StopEvents()
         while (!eventsInitialized);
 
         webworks::BBMBPS::SendEndEvent();
+        eventsInitialized = false;
         pthread_join(m_thread, NULL);
         m_thread = 0;
     }

@@ -102,40 +102,7 @@ void BBMBPS::processAccessCode(int code)
             accessString.append("unknown");
             break;
     }
-        fprintf(stderr, "code received: %d\n", code);
-        m_pParent->NotifyEvent(accessString);
-}
-
-void BBMBPS::processPresenceUpdate(int code)
-{
-    std::string presenceString = "onupdate";
-
-    switch (code) {
-        case BBMSP_DISPLAY_NAME:
-            presenceString.append("displayname");
-            break;
-        case BBMSP_DISPLAY_PICTURE:
-            presenceString.append("displaypicture");
-            break;
-        case BBMSP_PERSONAL_MESSAGE:
-            presenceString.append("personalmessage");
-            break;
-        case BBMSP_STATUS:
-            presenceString.append("status");
-            break;
-        case BBMSP_INSTALL_APP:
-            presenceString.append("install");
-            break;
-        case BBMSP_UNINSTALL_APP:
-            presenceString.append("uninstall");
-            break;
-        case BBMSP_INVITATION_RECEIVED:
-            presenceString.append("invitation");
-            break;
-        default:
-            presenceString.append("unknown");
-            break;
-    }
+    m_pParent->NotifyEvent(accessString);
 }
 
 int BBMBPS::WaitForEvents()
@@ -173,6 +140,8 @@ int BBMBPS::WaitForEvents()
                             break;
                     }
                 }
+            } else if (event_domain == m_endEventDomain) {
+                break;
             }
         }
     }
@@ -191,7 +160,7 @@ void BBMBPS::SendEndEvent()
     bps_channel_push_event(m_eventChannel, end_event);
 }
 
-void BBMBPS::Register(const std::string uuid)
+void BBMBPS::Register(const std::string& uuid)
 {
     bbmsp_register(uuid.c_str());
 }
@@ -232,12 +201,12 @@ void BBMBPS::GetProfile(BBMContact *bbmContact)
     bbmsp_profile_destroy(&profile);
 }
 
-void BBMBPS::SetStatus(int status, const std::string statusMessage)
+void BBMBPS::SetStatus(int status, const std::string& statusMessage)
 {
     bbmsp_set_user_profile_status(status, statusMessage.c_str(), statusMessage.length());
 }
 
-void BBMBPS::SetPersonalMessage(const std::string personalMessage)
+void BBMBPS::SetPersonalMessage(const std::string& personalMessage)
 {
     bbmsp_set_user_profile_personal_message(personalMessage.c_str(), personalMessage.length());
 }

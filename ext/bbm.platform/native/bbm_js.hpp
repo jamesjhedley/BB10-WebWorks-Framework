@@ -29,6 +29,7 @@ class BBM : public JSExt
 public:
     explicit BBM(const std::string& id);
     virtual ~BBM() {}
+    static void* BBMEventThread(void *parent);
     virtual std::string InvokeMethod(const std::string& command);
     virtual bool CanDelete();
     void NotifyEvent(const std::string& event);
