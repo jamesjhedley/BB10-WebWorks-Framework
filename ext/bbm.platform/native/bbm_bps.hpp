@@ -47,10 +47,10 @@ public:
     static void SendEndEvent();
     static int GetActiveChannel();
     // BBM related functions
-    void Register(const std::string uuid);
+    void Register(const std::string& uuid);
     void GetProfile(BBMContact *bbmContact);
-    void SetStatus(int status, const std::string personalMessage);
-    void SetPersonalMessage(const std::string personalMessage);
+    void SetStatus(int status, const std::string& personalMessage);
+    void SetPersonalMessage(const std::string& personalMessage);
 private:
     BBM *m_pParent;
     void processAccessCode(int code);
