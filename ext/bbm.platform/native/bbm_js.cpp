@@ -17,7 +17,6 @@
 #include <bps/bps.h>
 #include <pthread.h>
 #include <json/reader.h>
-#include <json/writer.h>
 #include <sstream>
 #include <string>
 
@@ -90,25 +89,9 @@ std::string BBM::InvokeMethod(const std::string& command)
 
         m_pBBMController->Register(uuid);
     } else if (strCommand == "getProfile") {
-        Json::FastWriter writer;
-        Json::Value obj;
+        webworks::BBMField field = static_cast<webworks::BBMField>(atoi(strParam.c_str()));
 
-        webworks::BBMContact bbmContact;
-        m_pBBMController->GetProfile(&bbmContact);
-
-        obj["displayName"] = bbmContact.displayName;
-        obj["status"] = bbmContact.status;
-        obj["statusMessage"] = bbmContact.statusMessage;
-        obj["personalMessage"] = bbmContact.personalMessage;
-        obj["ppid"] = bbmContact.ppid;
-        obj["handle"] = bbmContact.handle;
-        obj["appVersion"] = bbmContact.appVersion;
-        obj["bbmsdkVersion"] = bbmContact.bbmsdkVersion;
-        obj["countryCode"] = bbmContact.countryCode;
-        obj["countryFlag"] = bbmContact.countryFlag;
-        obj["timezone"] = bbmContact.timezone;
-
-        return writer.write(obj);
+        return m_pBBMController->GetProfile(field);
     } else if (strCommand == "setStatus") {
         bool parse = reader.parse(strParam, obj);
         if (!parse) {

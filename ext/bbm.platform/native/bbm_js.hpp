@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef BBM_JS_H_
-#define BBM_JS_H_
+#ifndef BBM_JS_HPP_
+#define BBM_JS_HPP_
 
 #include <pthread.h>
 #include <string>
@@ -41,4 +41,4 @@ private:
     std::string m_id;
 };
 
-#endif // BBM_JS_H_
+#endif // BBM_JS_HPP_

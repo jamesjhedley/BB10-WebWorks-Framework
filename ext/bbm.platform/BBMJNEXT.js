@@ -45,8 +45,8 @@ JNEXT.BBM = function ()
         JNEXT.invoke(self.m_id, "register " + JSON.stringify(options));
     };
 
-    self.getProfile = function () {
-        return JSON.parse(JNEXT.invoke(self.m_id, "getProfile"));
+    self.getProfile = function (field) {
+        return JNEXT.invoke(self.m_id, "getProfile " + field);
     };
     
     self.setStatus = function (statusArgs) {

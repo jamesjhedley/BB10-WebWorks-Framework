@@ -17,7 +17,18 @@ var _apiDir = __dirname + "./../../../../ext/bbm.platform/",
     _libDir = __dirname + "./../../../../lib/",
     events = require(_libDir + "event"),
     eventExt = require(__dirname + "./../../../../ext/event/index"),
-    index = null;
+    index = null,
+    BBM_DISPLAY_NAME = 0,
+    BBM_STATUS = 1,
+    BBM_STATUS_MESSAGE = 2,
+    BBM_PERSONAL_MESSAGE = 3,
+    BBM_PPID = 4,
+    BBM_HANDLE = 5,
+    BBM_APP_VERSION = 6,
+    BBM_SDK_VERSION = 7,
+    BBM_COUNTRY_CODE = 8,
+    BBM_COUNTRY_FLAG = 9,
+    BBM_TIMEZONE = 10;
 
 describe("bbm.platform index", function () {
     beforeEach(function () {
@@ -72,7 +83,7 @@ describe("bbm.platform index", function () {
 
             index.self.appVersion(success, null, null, null);
             
-            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile");
+            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile " + BBM_APP_VERSION);
             expect(success).toHaveBeenCalled();
         });
         
@@ -81,7 +92,7 @@ describe("bbm.platform index", function () {
 
             index.self.bbmsdkVersion(success, null, null, null);
             
-            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile");
+            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile " + BBM_SDK_VERSION);
             expect(success).toHaveBeenCalled();
         });
         
@@ -90,7 +101,7 @@ describe("bbm.platform index", function () {
 
             index.self.countryCode(success, null, null, null);
             
-            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile");
+            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile " + BBM_COUNTRY_CODE);
             expect(success).toHaveBeenCalled();
         });
         
@@ -99,7 +110,7 @@ describe("bbm.platform index", function () {
 
             index.self.countryFlag(success, null, null, null);
             
-            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile");
+            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile " + BBM_COUNTRY_FLAG);
             expect(success).toHaveBeenCalled();
         });
         
@@ -108,25 +119,16 @@ describe("bbm.platform index", function () {
 
             index.self.displayName(success, null, null, null);
             
-            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile");
+            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile " + BBM_DISPLAY_NAME);
             expect(success).toHaveBeenCalled();
         });
         
-        it("displayPicture", function () {
-            var success = jasmine.createSpy();
-
-            index.self.displayPicture(success, null, null, null);
-            
-            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile");
-            expect(success).toHaveBeenCalled();
-        });
-
         it("handle", function () {
             var success = jasmine.createSpy();
 
             index.self.handle(success, null, null, null);
             
-            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile");
+            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile " + BBM_HANDLE);
             expect(success).toHaveBeenCalled();
         });
         
@@ -135,7 +137,7 @@ describe("bbm.platform index", function () {
 
             index.self.personalMessage(success, null, null, null);
             
-            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile");
+            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile " + BBM_PERSONAL_MESSAGE);
             expect(success).toHaveBeenCalled();
         });
 
@@ -144,7 +146,7 @@ describe("bbm.platform index", function () {
 
             index.self.ppid(success, null, null, null);
             
-            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile");
+            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile " + BBM_PPID);
             expect(success).toHaveBeenCalled();
         });
 
@@ -153,7 +155,7 @@ describe("bbm.platform index", function () {
 
             index.self.status(success, null, null, null);
             
-            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile");
+            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile " + BBM_STATUS);
             expect(success).toHaveBeenCalled();
         });
 
@@ -162,7 +164,7 @@ describe("bbm.platform index", function () {
 
             index.self.statusMessage(success, null, null, null);
             
-            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile");
+            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile " + BBM_STATUS_MESSAGE);
             expect(success).toHaveBeenCalled();
         });
         
@@ -171,7 +173,7 @@ describe("bbm.platform index", function () {
 
             index.self.timezone(success, null, null, null);
             
-            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile");
+            expect(JNEXT.invoke).toHaveBeenCalledWith(jasmine.any(String), "getProfile " + BBM_TIMEZONE);
             expect(success).toHaveBeenCalled();
         });
 

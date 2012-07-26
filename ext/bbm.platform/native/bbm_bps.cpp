@@ -156,13 +156,13 @@ int BBMBPS::WaitForEvents()
                 int eventCategory = 0;
                 int eventType = 0;
                 int code = 0;
-                int profileUpdateType = 0;
 
                 bbmsp_event_get(event, &bbmEvent);
 
                 if (bbmsp_event_get_category(event, &eventCategory) == BBMSP_SUCCESS) {
                     switch (eventCategory) {
                         case BBMSP_REGISTRATION:
+                        {
                             if (bbmsp_event_get_type(event, &eventType) == BBMSP_SUCCESS) {
                                 switch (eventType) {
                                     case BBMSP_SP_EVENT_ACCESS_CHANGED:
@@ -171,16 +171,28 @@ int BBMBPS::WaitForEvents()
                                 }
                             }
                             break;
+                        }
                         case BBMSP_USER_PROFILE:
+                        {
                             if (bbmsp_event_get_type(event, &eventType) == BBMSP_SUCCESS) {
+                                fprintf(stderr, "event type: %d\n", eventType);
                                 switch (eventType) {
                                     case BBMSP_SP_EVENT_PROFILE_CHANGED:
+                                    {
+                                        int profileUpdateType;
                                         bbmsp_event_profile_changed_get_profile(bbmEvent, &bbmProfile);
                                         profileUpdateType = bbmsp_event_profile_changed_get_presence_update_type(bbmEvent);
+                                        if (profileUpdateType == BBMSP_DISPLAY_PICTURE) {
+                                            bbmsp_image_t *avatar;
+                                            bbmsp_image_create_empty(&avatar);
+                                            bbmsp_profile_get_avatar(bbmProfile, avatar);
+                                        }
                                         break;
+                                    }
                                 }
                             }
                             break;
+                        }
                     }
                 }
             } else if (event_domain == m_endEventDomain) {
@@ -208,44 +220,74 @@ void BBMBPS::Register(const std::string& uuid)
     bbmsp_register(uuid.c_str());
 }
 
-void BBMBPS::GetProfile(BBMContact *bbmContact)
+std::string BBMBPS::GetProfile(const BBMField field)
 {
     bbmsp_profile_t *profile;
     bbmsp_profile_create(&profile);
     bbmsp_get_user_profile(profile);
-
+    std::string value;
     char buffer[4096];
-    bbmsp_profile_get_display_name(profile, buffer, sizeof(buffer));
-    bbmContact->displayName = buffer;
-    bbmsp_profile_get_status_message(profile, buffer, sizeof(buffer));
-    bbmContact->statusMessage = buffer;
-    bbmsp_profile_get_personal_message(profile, buffer, sizeof(buffer));
-    bbmContact->personalMessage = buffer;
-    bbmsp_profile_get_ppid(profile, buffer, sizeof(buffer));
-    bbmContact->ppid = buffer;
-    bbmsp_profile_get_handle(profile, buffer, sizeof(buffer));
-    bbmContact->handle = buffer;
-    bbmsp_profile_get_app_version(profile, buffer, sizeof(buffer));
-    bbmContact->appVersion = buffer;
 
-    bbmsp_image_t *avatar;
-    bbmsp_profile_get_avatar(profile, avatar);
-    fprintf(stderr, "image type: %d\n", bbmsp_image_get_type(avatar));
-
-    int value;
-    value = bbmsp_profile_get_status(profile);
-    if (value == 0) {
-        bbmContact->status = "available";
+    switch (field)
+    {
+        case BBM_DISPLAY_NAME:
+        {
+            bbmsp_profile_get_display_name(profile, buffer, sizeof(buffer));
+            value = buffer;
+            break;
+        }
+        case BBM_STATUS:
+        {
+            int val;
+            val = bbmsp_profile_get_status(profile);
+            if (val == 0) {
+                value = "available";
+            }
+            else if (val == 1) {
+                value = "busy";
+            }
+            break;
+        }
+        case BBM_STATUS_MESSAGE:
+        {
+            bbmsp_profile_get_status_message(profile, buffer, sizeof(buffer));
+            value = buffer;
+            break;
+        }
+        case BBM_PERSONAL_MESSAGE:
+        {
+            bbmsp_profile_get_personal_message(profile, buffer, sizeof(buffer));
+            value = buffer;
+            break;
+        }
+        case BBM_PPID:
+        {
+            bbmsp_profile_get_ppid(profile, buffer, sizeof(buffer));
+            value = buffer;
+            break;
+        }
+        case BBM_HANDLE:
+        {
+            bbmsp_profile_get_handle(profile, buffer, sizeof(buffer));
+            value = buffer;
+            break;
+        }
+        case BBM_APP_VERSION:
+        {
+            bbmsp_profile_get_app_version(profile, buffer, sizeof(buffer));
+            value = buffer;
+            break;
+        }
+        case BBM_SDK_VERSION:
+        {
+            int val;
+            val = bbmsp_profile_get_platform_version(profile);
+            std::stringstream ss;
+            ss << val;
+            value = ss.str();
+        }
     }
-    else if (value == 1) {
-        bbmContact->status = "busy";
-    }
-
-    value = bbmsp_profile_get_platform_version(profile);
-    std::stringstream ss;
-    ss << value;
-    bbmContact->bbmsdkVersion = ss.str();
-
+    /*
     // Get location information
     bbmsp_profile_location_t *location;
     bbmsp_profile_location_create(&location);
@@ -259,6 +301,7 @@ void BBMBPS::GetProfile(BBMContact *bbmContact)
     bbmsp_profile_location_get_timezone(location, buffer, sizeof(buffer));
     bbmContact->timezone = buffer;
     bbmsp_profile_location_destroy(&location);
+     */
     bbmsp_profile_destroy(&profile);
 }
 

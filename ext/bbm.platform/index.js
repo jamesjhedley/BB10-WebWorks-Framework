@@ -32,7 +32,18 @@ var bbm = require("./BBMJNEXT").bbm,
                 _event.trigger("onaccesschanged", allowed, reason);
             }
         }
-    };
+    },
+    BBM_DISPLAY_NAME = 0,
+    BBM_STATUS = 1,
+    BBM_STATUS_MESSAGE = 2,
+    BBM_PERSONAL_MESSAGE = 3,
+    BBM_PPID = 4,
+    BBM_HANDLE = 5,
+    BBM_APP_VERSION = 6,
+    BBM_SDK_VERSION = 7,
+    BBM_COUNTRY_CODE = 8,
+    BBM_COUNTRY_FLAG = 9,
+    BBM_TIMEZONE = 10;
 
 module.exports = {
     registerEvents: function (success, fail, args, env) {
@@ -61,51 +72,47 @@ module.exports = {
 
     self : {
         appVersion : function (success, fail, args, env) {
-            success(bbm.getProfile().appVersion);
+            success(bbm.getProfile(BBM_APP_VERSION));
         },
 
         bbmsdkVersion : function (success, fail, args, env) {
-            success(parseInt(bbm.getProfile().bbmsdkVersion, 10));
+            success(parseInt(bbm.getProfile(BBM_SDK_VERSION), 10));
         },
 
         countryCode : function (success, fail, args, env) {
-            success(bbm.getProfile().countryCode);
+            success(bbm.getProfile(BBM_COUNTRY_CODE));
         },
 
         countryFlag : function (success, fail, args, env) {
-            success(bbm.getProfile().countryFlag);
+            success(bbm.getProfile(BBM_COUNTRY_FLAG));
         },
 
         displayName : function (success, fail, args, env) {
-            success(bbm.getProfile().displayName);
-        },
-
-        displayPicture : function (success, fail, args, env) {
-            success(bbm.getProfile().displayPicture);
+            success(bbm.getProfile(BBM_DISPLAY_NAME));
         },
 
         handle : function (success, fail, args, env) {
-            success(bbm.getProfile().handle);
+            success(bbm.getProfile(BBM_HANDLE));
         },
 
         personalMessage : function (success, fail, args, env) {
-            success(bbm.getProfile().personalMessage);
+            success(bbm.getProfile(BBM_PERSONAL_MESSAGE));
         },
 
         ppid : function (success, fail, args, env) {
-            success(bbm.getProfile().ppid);
+            success(bbm.getProfile(BBM_PPID));
         },
 
         status : function (success, fail, args, env) {
-            success(bbm.getProfile().status);
+            success(bbm.getProfile(BBM_STATUS));
         },
 
         statusMessage : function (success, fail, args, env) {
-            success(bbm.getProfile().statusMessage);
+            success(bbm.getProfile(BBM_STATUS_MESSAGE));
         },
 
         timezone : function (success, fail, args, env) {
-            success(bbm.getProfile().timezone);
+            success(bbm.getProfile(BBM_TIMEZONE));
         },
 
         setStatus : function (success, fail, args, env) {

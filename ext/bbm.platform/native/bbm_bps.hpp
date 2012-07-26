@@ -23,18 +23,18 @@ class BBM;
 
 namespace webworks {
 
-struct BBMContact {
-    std::string displayName;
-    std::string status;
-    std::string statusMessage;
-    std::string personalMessage;
-    std::string ppid;
-    std::string handle;
-    std::string appVersion;
-    std::string bbmsdkVersion;
-    std::string countryCode;
-    std::string countryFlag;
-    std::string timezone;
+enum BBMField {
+    BBM_DISPLAY_NAME = 0,
+    BBM_STATUS,
+    BBM_STATUS_MESSAGE,
+    BBM_PERSONAL_MESSAGE,
+    BBM_PPID,
+    BBM_HANDLE,
+    BBM_APP_VERSION,
+    BBM_SDK_VERSION,
+    BBM_COUNTRY_CODE,
+    BBM_COUNTRY_FLAG,
+    BBM_TIMEZONE
 };
 
 class BBMBPS {
@@ -48,7 +48,7 @@ public:
     static int GetActiveChannel();
     // BBM related functions
     void Register(const std::string& uuid);
-    void GetProfile(BBMContact *bbmContact);
+    std::string GetProfile(BBMField field);
     void SetStatus(int status, const std::string& personalMessage);
     void SetPersonalMessage(const std::string& personalMessage);
 private:
