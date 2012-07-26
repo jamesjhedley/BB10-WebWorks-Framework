@@ -28,7 +28,7 @@ describe("blackberry.ui.contextmenu client", function () {
     beforeEach(function () {
         GLOBAL.window.webworks = mockedWebworks;
         client = require(_apiDir + "/client");
-        spyOn(console,"log");
+        spyOn(console, "log");
     });
 
     it("enabled context menu calls execAsync", function () {

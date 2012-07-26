@@ -30,7 +30,7 @@ Object.defineProperty(contextmenu, "enabled", {
     },
     set: function (value) {
         try {
-            if(value === true || value === false) {
+            if (value === true || value === false) {
                 window.webworks.execAsync(ID, "enabled", {"enabled": value});
             } else {
                 console.log("contextmenu.enabled only accepts boolean values");
