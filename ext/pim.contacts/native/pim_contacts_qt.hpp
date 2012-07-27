@@ -19,6 +19,7 @@
 
 #include <string>
 #include <map>
+#include <json/value.h>
 #include <bb/pim/contacts/ContactService.hpp>
 #include <bb/pim/contacts/ContactConsts.hpp>
 #include <bb/pim/contacts/Contact.hpp>
@@ -43,10 +44,19 @@ public:
 
     static void createAttributeKindMap();
     static void createAttributeSubKindMap();
+    static void createKindAttributeMap();
+    static void createSubKindAttributeMap();
 
 private:
+    QSet<ContactId> singleFieldSearch(const Json::Value& search_field_json, /*const Json::Value& sort_fields_json,*/ bool favorite);
+    Json::Value assembleSearchResults(const QSet<ContactId>& results, const Json::Value& contact_fields, const Json::Value& sort_fields_json, int limit);
+    void populateContactField(const Contact& contact, AttributeKind::Type kind, Json::Value& contact_item);
+
     static std::map<std::string, AttributeKind::Type> attributeKindMap;
     static std::map<std::string, AttributeSubKind::Type> attributeSubKindMap;
+    static std::map<AttributeKind::Type, std::string> kindAttributeMap;
+    static std::map<AttributeSubKind::Type, std::string> subKindAttributeMap;
+    std::map<ContactId, Contact> m_contactSearchMap;
 };
 
 } // namespace webworks

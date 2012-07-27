@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-#include <json/value.h>
 #include <json/writer.h>
 #include <json/reader.h>
 #include <stdio.h>
 #include <string>
 #include <sstream>
 #include <map>
+#include <algorithm>
+#include <QSet>
+#include <QMap>
 #include "pim_contacts_qt.hpp"
 
 namespace webworks {
@@ -35,6 +37,8 @@ PimContactsQt::PimContactsQt()
     if (!mapInit) {
         createAttributeKindMap();
         createAttributeSubKindMap();
+        createKindAttributeMap();
+        createSubKindAttributeMap();
         mapInit = true;
     }
 }
@@ -43,57 +47,174 @@ PimContactsQt::~PimContactsQt()
 {
 }
 
-std::string PimContactsQt::find(const std::string& optionsJson)
+QSet<ContactId> PimContactsQt::singleFieldSearch(const Json::Value& search_field_json, /*const Json::Value& sort_fields_json,*/ bool favorite)
 {
-    Json::Reader reader;
-    Json::Value options_obj;
-    bool parse = reader.parse(optionsJson, options_obj);
-
-    if (!parse) {
-        fprintf(stderr, "%s", "error parsing\n");
-        throw "Cannot parse JSON object";
-    }
-
     ContactService contact_service;
-    QList<Contact> contact_list;
+    ContactSearchFilters contact_filter;
+    QList<SearchField::Type> search_fields;
+    QList<SortSpecifier> sort_fields;
+    QList<Contact> results;
+    QSet<ContactId> contact_ids_set;
 
-    if (options_obj.empty()) {
-        ContactListFilters contact_filter;
-        contact_list = contact_service.contacts(contact_filter);
-    } else {
-        ContactSearchFilters contact_filter;
-
-        const Json::Value::Members option_keys = options_obj.getMemberNames();
-        QList<SearchField::Type> search_fields;
-        std::string search_value;
-
-        for (int i = 0; i < option_keys.size(); i++) {
-            const std::string key = option_keys[i];
-            const std::string value = options_obj[key].asString();
-
-            if (key == "firstName") {
-                search_fields.append(SearchField::FirstName);
-                search_value = value;
-            } else if (key == "lastName") {
-                search_fields.append(SearchField::LastName);
-                search_value = value;
-            }
-        }
-
-        if (!search_fields.empty()) {
-            contact_filter = contact_filter.setSearchFields(search_fields);
-            contact_filter = contact_filter.setSearchValue(QString(search_value.c_str()));
-        }
-
-        contact_list = contact_service.searchContacts(contact_filter);
+    switch (search_field_json["fieldName"].asInt()) {
+        case SearchField::FirstName:
+            search_fields.append(SearchField::FirstName);
+            break;
+        case SearchField::LastName:
+            search_fields.append(SearchField::LastName);
+            break;
+        case SearchField::CompanyName:
+            search_fields.append(SearchField::CompanyName);
+            break;
+        case SearchField::Phone:
+            search_fields.append(SearchField::Phone);
+            break;
+        case SearchField::Email:
+            search_fields.append(SearchField::Email);
+            break;
+        case SearchField::BBMPin:
+            search_fields.append(SearchField::BBMPin);
+            break;
+        case SearchField::LinkedIn:
+            search_fields.append(SearchField::LinkedIn);
+            break;
+        case SearchField::Twitter:
+            search_fields.append(SearchField::Twitter);
+            break;
+        case SearchField::VideoChat:
+            search_fields.append(SearchField::VideoChat);
+            break;
     }
-    
+
+    contact_filter.setSearchFields(search_fields);
+
+    contact_filter.setSearchValue(QString(search_field_json["fieldValue"].asString().c_str()));
+/*
+    for (int i = 0; i < sort_fields_json.size(); i++) {
+        SortOrder::Type order;
+        SortColumn::Type sort_field;
+
+        if (sort_fields_json[i]["desc"].asBool()) {
+            order = SortOrder::Descending;
+        } else {
+            order = SortOrder::Ascending;
+        }
+
+        if (sort_fields_json[i]["fieldName"] == SortColumn::FirstName) {
+            sort_field = SortColumn::FirstName;
+        } else if (sort_fields_json[i]["fieldName"] == SortColumn::LastName) {
+            sort_field = SortColumn::LastName;
+        } else if (sort_fields_json[i]["fieldName"] == SortColumn::CompanyName) {
+            sort_field = SortColumn::CompanyName;
+        }
+
+        sort_fields.append(SortSpecifier(sort_field, order));
+    }
+
+    // sorting here don't really make sense because this is not the final search results
+    contact_filter.setSortBy(sort_fields);
+*/
+    if (favorite) {
+        contact_filter.setIsFavourite(favorite);
+    }
+
+    results = contact_service.searchContacts(contact_filter);
+
+    for (int i = 0; i < results.size(); i++) {
+        contact_ids_set.insert(results[i].id());
+        m_contactSearchMap[results[i].id()] = results[i];
+    }
+
+    return contact_ids_set;
+}
+
+void PimContactsQt::populateContactField(const Contact& contact, AttributeKind::Type kind, Json::Value& contact_item)
+{
+    QList<ContactAttribute> attrs = contact.filteredAttributes(kind);
+    QList<ContactAttribute>::const_iterator k = attrs.constBegin();
+    Json::Value array;
+
+    while (k != attrs.constEnd()) {
+        ContactAttribute curr_attr = *k;
+        Json::Value val;
+        std::map<AttributeSubKind::Type, std::string>::const_iterator type_iter = subKindAttributeMap.find(curr_attr.subKind());
+
+        if (type_iter != subKindAttributeMap.end()) {
+            val["type"] = Json::Value(type_iter->second);
+            val["value"] = Json::Value(curr_attr.value().toStdString());
+            array.append(val);
+        } else {
+            // TODO
+        }
+    }
+
+    std::map<AttributeKind::Type, std::string>::const_iterator field_iter = kindAttributeMap.find(kind);
+
+    if (field_iter != kindAttributeMap.end()) {
+        contact_item[field_iter->second] = array;
+    } else {
+        // TODO
+    }
+}
+
+Json::Value PimContactsQt::assembleSearchResults(const QSet<ContactId>& results, const Json::Value& contact_fields, const Json::Value& sort_fields_json, int limit)
+{
+    // TODO index by first name for now
+    QMap<QString, Contact> complete_results;
+
+    QSet<ContactId>::const_iterator i = results.constBegin();
+    Contact current_contact;
+
+    while (i != results.constEnd()) {
+        current_contact = m_contactSearchMap[*i];
+        complete_results[current_contact.firstName()] = current_contact;
+        ++i;
+    }
+
+    QMap<QString, Contact>::const_iterator j = complete_results.constBegin();
+    QList<Contact> contact_list;
+    while (j != complete_results.constEnd()) {
+        contact_list.append(j.value());
+        ++j;
+    }
+
     Json::Value contact_obj;
     Json::Value contact_array;
 
-    for (int i = 0; i < contact_list.size(); i++) {
+    if (limit == -1) {
+        limit = contact_list.size();
+    } else {
+        limit = min(limit, contact_list.size());
+    }
+
+    for (int i = 0; i < limit; i++) {
         Json::Value contact_item;
 
+        for (int j = 0; j < contact_fields.size(); j++) {
+            std::map<std::string, AttributeKind::Type>::const_iterator kind_iter = attributeKindMap.find(contact_fields[j].asString());
+
+            if (kind_iter != attributeKindMap.end()) {
+                switch (kind_iter->second) {
+                case AttributeKind::Name:
+                    {
+                        contact_item["name"] = Json::Value();
+                        contact_item["name"]["givenName"] = Json::Value(contact_list[i].firstName().toStdString());
+                        contact_item["name"]["familyName"] = Json::Value(contact_list[i].lastName().toStdString());
+                        contact_item["displayName"] = Json::Value(contact_list[i].displayName().toStdString());
+                        // TODO other fields in name
+                        break;
+                    }
+
+                case AttributeKind::Email:
+                    {
+                        populateContactField(contact_list[i], AttributeKind::Email, contact_item);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // TODO have to look at what fields to include
         contact_item["displayName"] = Json::Value(contact_list[i].displayName().toStdString());
         contact_item["contactId"] = Json::Value(contact_list[i].id());
 
@@ -102,7 +223,66 @@ std::string PimContactsQt::find(const std::string& optionsJson)
 
     contact_obj["contacts"] = contact_array;
 
+    return contact_obj;
+}
+
+std::string PimContactsQt::find(const std::string& args_json)
+{
+    Json::Reader reader;
+    Json::Value args_obj;
+    bool parse = reader.parse(args_json, args_obj);
+
+    if (!parse) {
+        fprintf(stderr, "%s", "error parsing\n");
+        throw "Cannot parse JSON object";
+    }
+
+    m_contactSearchMap.clear();
+
+    ContactService contact_service;
+    QList<Contact> contact_list;
+    Json::Value contact_fields;
+    QSet<ContactId> results;
+
+    if (args_obj.empty()) {
+        ContactListFilters contact_filter;
+        contact_list = contact_service.contacts(contact_filter);
+    } else {
+        ContactSearchFilters contact_filter;
+        const Json::Value::Members args_key = args_obj.getMemberNames();
+
+        for (int i = 0; i < args_key.size(); i++) {
+            const std::string key = args_key[i];
+
+            if (key == "fields") {
+                contact_fields = args_obj[key];
+            } else if (key == "options") {
+                Json::Value filter = args_obj["filter"];
+
+                if (filter != NULL && filter.isArray()) {
+                    for (int j = 0; j < filter.size(); j++) {
+                        QSet<ContactId> current_results = singleFieldSearch(filter[j], /*options_obj["sort"],*/ args_obj[key]["favorite"].asBool());
+
+                        if (current_results.empty()) {
+                            // no need to continue...can return right away
+                            results = current_results;
+                            break;
+                        } else {
+                            if (j == 0) {
+                                results = current_results;
+                            } else {
+                                results.intersect(current_results);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    Json::Value contact_obj = assembleSearchResults(results, contact_fields, NULL, args_obj["options"]["limit"].asInt());
     Json::FastWriter writer;
+
     return writer.write(contact_obj);
 }
 
@@ -353,6 +533,67 @@ void PimContactsQt::createAttributeSubKindMap() {
     attributeSubKindMap["YahooMessenger"] = AttributeSubKind::InstantMessagingYahooMessenger;
     attributeSubKindMap["YahooMessegerJapan"] = AttributeSubKind::InstantMessagingYahooMessengerJapan;
     attributeSubKindMap["BbPlaybook"] = AttributeSubKind::VideoChatBbPlaybook;
+}
+
+void PimContactsQt::createKindAttributeMap() {
+    kindAttributeMap[AttributeKind::Phone] = "phoneNumbers";
+    kindAttributeMap[AttributeKind::Fax] = "faxNumbers";
+    kindAttributeMap[AttributeKind::Pager] = "pagerNumber";
+    kindAttributeMap[AttributeKind::Email] = "emails";
+    kindAttributeMap[AttributeKind::Website] = "urls";
+    kindAttributeMap[AttributeKind::Profile] = "socialNetworks";
+    //attributeKindMap[AttributeKind::Date] = "anniversary";
+    // attributeKindMap[AttributeKind::Date] = "birthday";
+    //attributeKindMap["name"] = AttributeKind::Name;
+    //attributeKindMap["displayName"] = AttributeKind::Name;
+    kindAttributeMap[AttributeKind::OrganizationAffiliation] = "organizations";
+    kindAttributeMap[AttributeKind::Education] = "education";
+    kindAttributeMap[AttributeKind::Note] = "note";
+    kindAttributeMap[AttributeKind::InstantMessaging] = "ims";
+    kindAttributeMap[AttributeKind::VideoChat] = "videoChat";
+    kindAttributeMap[AttributeKind::Invalid] = "addresses";
+}
+
+void PimContactsQt::createSubKindAttributeMap() {
+    subKindAttributeMap[AttributeSubKind::Other] = "other";
+    subKindAttributeMap[AttributeSubKind::Home] = "home";
+    subKindAttributeMap[AttributeSubKind::Work] = "work";
+    subKindAttributeMap[AttributeSubKind::PhoneMobile] = "mobile";
+    subKindAttributeMap[AttributeSubKind::FaxDirect] = "direct";
+    subKindAttributeMap[AttributeSubKind::Blog] = "blog";
+    subKindAttributeMap[AttributeSubKind::WebsiteResume] = "resume";
+    subKindAttributeMap[AttributeSubKind::WebsitePortfolio] = "portfolio";
+    subKindAttributeMap[AttributeSubKind::WebsitePersonal] = "personal";
+    subKindAttributeMap[AttributeSubKind::WebsiteCompany] = "company";
+    subKindAttributeMap[AttributeSubKind::ProfileFacebook] = "facebook";
+    subKindAttributeMap[AttributeSubKind::ProfileTwitter] = "twitter";
+    subKindAttributeMap[AttributeSubKind::ProfileLinkedIn] = "linkedin";
+    subKindAttributeMap[AttributeSubKind::ProfileGist] = "gist";
+    subKindAttributeMap[AttributeSubKind::ProfileTungle] = "tungle";
+    subKindAttributeMap[AttributeSubKind::DateBirthday] = "birthday";
+    subKindAttributeMap[AttributeSubKind::DateAnniversary] = "anniversary";
+    subKindAttributeMap[AttributeSubKind::NameGiven] = "givenName";
+    subKindAttributeMap[AttributeSubKind::NameSurname] = "familyName";
+    subKindAttributeMap[AttributeSubKind::Title] = "honorificPrefix";
+    subKindAttributeMap[AttributeSubKind::NameSuffix] = "honorificSuffix";
+    subKindAttributeMap[AttributeSubKind::NameMiddle] = "middleName";
+    subKindAttributeMap[AttributeSubKind::NamePhoneticGiven] = "phoneticGivenName";
+    subKindAttributeMap[AttributeSubKind::NamePhoneticSurname] = "phoneticFamilyName";
+    subKindAttributeMap[AttributeSubKind::OrganizationAffiliationName] = "name";
+    subKindAttributeMap[AttributeSubKind::OrganizationAffiliationDetails] = "department";
+    subKindAttributeMap[AttributeSubKind::Title] = "title";
+    subKindAttributeMap[AttributeSubKind::InstantMessagingBbmPin] = "BbmPin";
+    subKindAttributeMap[AttributeSubKind::InstantMessagingAim] = "Aim";
+    subKindAttributeMap[AttributeSubKind::InstantMessagingAliwangwang] = "Aliwangwang";
+    subKindAttributeMap[AttributeSubKind::InstantMessagingGoogleTalk] = "GoogleTalk";
+    subKindAttributeMap[AttributeSubKind::InstantMessagingSametime] = "Sametime";
+    subKindAttributeMap[AttributeSubKind::InstantMessagingIcq] = "Icq";
+    subKindAttributeMap[AttributeSubKind::InstantMessagingJabber] = "Jabber";
+    subKindAttributeMap[AttributeSubKind::InstantMessagingMsLcs] = "MsLcs";
+    subKindAttributeMap[AttributeSubKind::InstantMessagingSkype] = "Skype";
+    subKindAttributeMap[AttributeSubKind::InstantMessagingYahooMessenger] = "YahooMessenger";
+    subKindAttributeMap[AttributeSubKind::InstantMessagingYahooMessengerJapan] = "YahooMessegerJapan";
+    subKindAttributeMap[AttributeSubKind::VideoChatBbPlaybook] = "BbPlaybook";
 }
 
 } // namespace webworks
