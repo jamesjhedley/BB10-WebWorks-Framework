@@ -15,7 +15,8 @@
  */
  
 var _self = {},
-    _ID = require("./manifest.json").namespace;
+    _ID = require("./manifest.json").namespace,
+    _displayPictureEventId = "bbm.self.displayPicture";
 
 _self.self = {};
 
@@ -39,9 +40,21 @@ function defineGetter(obj, field) {
     });
 }
 
+function createEventHandler(callback, eventId) {
+    if (!window.webworks.event.isOn(eventId)) {
+        window.webworks.event.once(_ID, eventId, callback);
+    }
+}
+
 _self.register = function (options) {
     var args = { "options" : options };
     return window.webworks.execAsync(_ID, "register", args);
+};
+
+_self.getDisplayPicture = function (callback) {
+    var args = { "eventId" : _displayPictureEventId };
+    createEventHandler(callback, _displayPictureEventId);
+    return window.webworks.execAsync(_ID, "getDisplayPicture", args);
 };
 
 defineGetter(_self.self, "self/appVersion");

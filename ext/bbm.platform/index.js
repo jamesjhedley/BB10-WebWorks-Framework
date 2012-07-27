@@ -115,6 +115,15 @@ module.exports = {
             success(bbm.getProfile(BBM_TIMEZONE));
         },
 
+        getDisplayPicture : function (success, fail, args, env) {
+            if (args) {
+                args.eventId = JSON.parse(decodeURIComponent(args.eventId));
+            }
+
+            bbm.getDisplayPicture(args.eventId);
+            success();
+        },
+
         setStatus : function (success, fail, args, env) {
             if (args) {
                 args.status = JSON.parse(decodeURIComponent(args.status));
@@ -142,6 +151,19 @@ module.exports = {
 
             bbm.setPersonalMessage(args.personalMessage);
             success();
+        },
+
+        setDisplayPicture : function (success, fail, args, env) {
+            if (args) {
+                args.displayPicure = JSON.parse(decodeURIComponent(args.displayPicture));
+
+                if (args.displayPicture.length === 0) {
+                    fail(-1, "display picture must not be empty");
+                    return;
+                }
+            }
+
+            bbm.setDisplayPicture(args.displayPicture);
         }
     }
 };

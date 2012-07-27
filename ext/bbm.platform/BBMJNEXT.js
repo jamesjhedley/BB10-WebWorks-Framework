@@ -19,7 +19,8 @@ function requireLocal(id) {
 }
 
 var bbm,
-    accesschangedCallback = null;
+    accesschangedCallback = null,
+    _event = require("../../lib/event");
 
 ///////////////////////////////////////////////////////////////////
 // JavaScript wrapper for JNEXT plugin
@@ -48,7 +49,11 @@ JNEXT.BBM = function ()
     self.getProfile = function (field) {
         return JNEXT.invoke(self.m_id, "getProfile " + field);
     };
-    
+
+    self.getDisplayPicture = function (eventId) {
+        return JNEXT.invoke(self.m_id, "getDisplayPicture");
+    };
+
     self.setStatus = function (statusArgs) {
         JNEXT.invoke(self.m_id, "setStatus " + JSON.stringify(statusArgs));
     };
@@ -88,10 +93,13 @@ JNEXT.BBM = function ()
             }
 
             accesschangedCallback(allowed, arData[1]);
+        } else if (strEventDesc === "self.getDisplayPicture") {
+            _event.trigger(self.displayPictureEventId, arData[1]);
         }
     };
 
     self.m_id = "";
+    self.displayPictureEventId = "";
 
     self.init();
 };
