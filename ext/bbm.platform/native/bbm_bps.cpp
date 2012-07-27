@@ -21,6 +21,7 @@
 #include <bbmsp/bbmsp_context.h>
 #include <bbmsp/bbmsp_userprofile.h>
 #include <bbmsp/bbmsp_util.h>
+#include <resolv.h>
 #include <stdio.h>
 #include <sstream>
 #include <string>
@@ -175,7 +176,6 @@ int BBMBPS::WaitForEvents()
                         case BBMSP_USER_PROFILE:
                         {
                             if (bbmsp_event_get_type(event, &eventType) == BBMSP_SUCCESS) {
-                                fprintf(stderr, "event type: %d\n", eventType);
                                 switch (eventType) {
                                     case BBMSP_SP_EVENT_PROFILE_CHANGED:
                                     {
@@ -184,8 +184,20 @@ int BBMBPS::WaitForEvents()
                                         profileUpdateType = bbmsp_event_profile_changed_get_presence_update_type(bbmEvent);
                                         if (profileUpdateType == BBMSP_DISPLAY_PICTURE) {
                                             bbmsp_image_t *avatar;
+                                            char *imgData;
+                                            char *output = new char[1024000];
+
                                             bbmsp_image_create_empty(&avatar);
                                             bbmsp_profile_get_avatar(bbmProfile, avatar);
+                                            imgData = bbmsp_image_get_data(avatar);
+
+                                            int bufferSize = b64_ntop((unsigned char *)imgData, bbmsp_image_get_data_size(avatar), output, 1024000);
+                                            output[bufferSize] = 0;
+
+                                            m_pParent->NotifyEvent(std::string("self.getDisplayPicture ").append(output));
+
+                                            delete output;
+                                            bbmsp_image_destroy(&avatar);
                                         }
                                         break;
                                     }
@@ -302,6 +314,18 @@ std::string BBMBPS::GetProfile(const BBMField field)
     bbmContact->timezone = buffer;
     bbmsp_profile_location_destroy(&location);
      */
+    bbmsp_profile_destroy(&profile);
+    return value;
+}
+
+void BBMBPS::GetDisplayPicture()
+{
+    bbmsp_profile_t *profile;
+    bbmsp_profile_create(&profile);
+    bbmsp_get_user_profile(profile);
+
+    // Send request for user profile
+    bbmsp_profile_get_avatar(profile, NULL);
     bbmsp_profile_destroy(&profile);
 }
 

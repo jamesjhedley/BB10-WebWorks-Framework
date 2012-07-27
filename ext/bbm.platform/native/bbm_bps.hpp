@@ -49,6 +49,7 @@ public:
     // BBM related functions
     void Register(const std::string& uuid);
     std::string GetProfile(BBMField field);
+    void GetDisplayPicture();
     void SetStatus(int status, const std::string& personalMessage);
     void SetPersonalMessage(const std::string& personalMessage);
 private:

@@ -51,24 +51,23 @@ _self.register = function (options) {
     return window.webworks.execAsync(_ID, "register", args);
 };
 
-_self.getDisplayPicture = function (callback) {
-    var args = { "eventId" : _displayPictureEventId };
-    createEventHandler(callback, _displayPictureEventId);
-    return window.webworks.execAsync(_ID, "getDisplayPicture", args);
-};
-
 defineGetter(_self.self, "self/appVersion");
 defineGetter(_self.self, "self/bbmsdkVersion");
 defineGetter(_self.self, "self/countryCode");
 defineGetter(_self.self, "self/countryFlag");
 defineGetter(_self.self, "self/displayName");
-defineGetter(_self.self, "self/displayPicture");
 defineGetter(_self.self, "self/handle");
 defineGetter(_self.self, "self/personalMessage");
 defineGetter(_self.self, "self/ppid");
 defineGetter(_self.self, "self/status");
 defineGetter(_self.self, "self/statusMessage");
 defineGetter(_self.self, "self/timezone");
+
+_self.self.getDisplayPicture = function (callback) {
+    var args = { "eventId" : _displayPictureEventId };
+    createEventHandler(callback, _displayPictureEventId);
+    return window.webworks.execAsync(_ID, "self/getDisplayPicture", args);
+};
 
 _self.self.setStatus = function (status, statusMessage) {
     var args = { "status" : status, "statusMessage" : statusMessage };

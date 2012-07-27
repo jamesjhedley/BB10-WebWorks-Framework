@@ -27,7 +27,7 @@ var bbm,
 ///////////////////////////////////////////////////////////////////
 
 JNEXT.BBM = function ()
-{   
+{
     var self = this;
 
     self.startEvents = function (trigger) {
@@ -51,6 +51,7 @@ JNEXT.BBM = function ()
     };
 
     self.getDisplayPicture = function (eventId) {
+        self.displayPictureEventId = eventId;
         return JNEXT.invoke(self.m_id, "getDisplayPicture");
     };
 

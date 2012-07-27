@@ -118,10 +118,10 @@ module.exports = {
         getDisplayPicture : function (success, fail, args, env) {
             if (args) {
                 args.eventId = JSON.parse(decodeURIComponent(args.eventId));
-            }
 
-            bbm.getDisplayPicture(args.eventId);
-            success();
+                bbm.getDisplayPicture(args.eventId);
+                success();
+            }
         },
 
         setStatus : function (success, fail, args, env) {
@@ -155,7 +155,7 @@ module.exports = {
 
         setDisplayPicture : function (success, fail, args, env) {
             if (args) {
-                args.displayPicure = JSON.parse(decodeURIComponent(args.displayPicture));
+                args.displayPicture = JSON.parse(decodeURIComponent(args.displayPicture));
 
                 if (args.displayPicture.length === 0) {
                     fail(-1, "display picture must not be empty");

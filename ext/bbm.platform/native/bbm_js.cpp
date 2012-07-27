@@ -92,8 +92,12 @@ std::string BBM::InvokeMethod(const std::string& command)
         webworks::BBMField field = static_cast<webworks::BBMField>(atoi(strParam.c_str()));
 
         return m_pBBMController->GetProfile(field);
+    } else if (strCommand == "getDisplayPicture") {
+        m_pBBMController->GetDisplayPicture();
+        return "";
     } else if (strCommand == "setStatus") {
         bool parse = reader.parse(strParam, obj);
+
         if (!parse) {
             fprintf(stderr, "%s" "error parsing\n");
             return "";
